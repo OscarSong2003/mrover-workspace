@@ -1,4 +1,4 @@
 cython==0.29.14
-numpy==1.16.2
+numpy==1.21.0
 scipy==1.2.1
 odrive==0.5.4
