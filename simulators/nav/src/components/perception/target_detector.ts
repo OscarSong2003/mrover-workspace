@@ -49,13 +49,25 @@ function randnBm(min, max, skew):number {
   return num;
 }
 
-// indZscore is from 0 to 19
-function getGaussianThres(indZscore):number {
+// state.simSettings.noisePercent - global 
+function getGaussianThres():number {
   const sd = 0.2;
   const mu = 0.5;
-  const x = Zscores[indZscore] * sd;
+  const percentFactor = 100.0;
+  const divisor = 10; 
+  const factor = percentFactor / divisor; // 10 
+  // check and invert the values of z scores
+  const neg = -1; 
+  let indZscore = state.simSettings.noisePercent / factor; 
 
-  return mu + x;
+  if (indZscore > 5) {
+    indZscore = factor - indZscore; 
+    const x = neg * Zscores[indZscore] * sd; 
+    return mu + x; 
+  } else {
+    const x = Zscores[indZscore] * sd;
+    return mu + x;
+  }
 }
 
 /* Class that performs target dectection calculations. */
@@ -229,11 +241,11 @@ export default class TargetDetector {
     const num:number = randnBm(0, 1, 1);
 
     // console.log(state.simSettings.noisePercent);
-    const divisor = 18.0;
-    const percentFactor = 100.0;
-    const factor = percentFactor / divisor;
-    const indThres = Math.round(state.simSettings.noisePercent / factor);
-    const thres = getGaussianThres(indThres);
+    // const divisor = 18.0;
+    // const percentFactor = 100.0;
+    // const factor = percentFactor / divisor;
+    // const indThres = Math.round(state.simSettings.noisePercent / factor);
+    const thres = getGaussianThres();
 
     if (num < thres) {
       post.isHidden = true;
