@@ -52,6 +52,8 @@ export default class CanvasRover {
   /* Location of the rover */
   private currOdom!:Odom;
 
+  private realOdom!:Odom;
+
   /* Canvas context */
   private ctx!:CanvasRenderingContext2D;
 
@@ -86,6 +88,7 @@ export default class CanvasRover {
   /* Initialize CanvasRover instance by calculating scaled dimensions. */
   constructor(
       currOdom:Odom,
+      realOdom:Odom,
       canvasCent:Odom,
       scale:number, /* pixels/meter */
       path:Odom[],
@@ -97,6 +100,7 @@ export default class CanvasRover {
       zedGimbalPos:ZedGimbalPosition,
       enableFOVView:boolean
   ) {
+    this.realOdom = realOdom;
     this.currOdom = currOdom;
     this.canvasCent = canvasCent;
     this.scale = scale;
@@ -133,8 +137,6 @@ export default class CanvasRover {
     /* get canvas context */
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-    const loc:Point2D = odomToCanvas(this.currOdom, this.canvasCent, canvas.height, this.scale);
-
     /* Draw FOV */
     if (this.fov.visible) {
       this.drawFov(canvas);
@@ -144,6 +146,21 @@ export default class CanvasRover {
     if (this.pathVisible) {
       this.drawPath(canvas);
     }
+    const locReal:Point2D = odomToCanvas(this.realOdom, this.canvasCent, canvas.height,
+                                         this.scale);
+    const loc:Point2D = odomToCanvas(this.currOdom, this.canvasCent, canvas.height, this.scale);
+
+    this.ctx.save();
+    this.ctx.translate(locReal.x, locReal.y);
+    this.ctx.rotate(degToRad(this.realOdom.bearing_deg));
+
+    const opacity = 0.3;
+    this.drawBody(opacity);
+    this.drawEbox(opacity);
+    this.drawWheels(opacity);
+    this.drawZed(opacity);
+
+    this.ctx.restore();
 
     /* Draw rover */
     this.ctx.translate(loc.x, loc.y);
@@ -162,15 +179,17 @@ export default class CanvasRover {
    * Private Methods
    ************************************************************************************************/
   /* Draw body of rover on the canvas. */
-  private drawBody():void {
+  private drawBody(transparancyValue = 1):void {
     const bodyWdth:number = this.scaledRoverWdth - (2 * this.scaledWheelDpth);
     const bodyLen:number = this.scaledRoverLen;
-    this.ctx.fillStyle = 'black';
+    const color = `rgba(0, 0, 0, ${transparancyValue})`;
+    console.log(transparancyValue);
+    this.ctx.fillStyle = color;
     this.ctx.fillRect(-bodyWdth / 2, -bodyLen / 2, bodyWdth, bodyLen);
   } /* drawBody() */
 
   /* Draw ebox on the rover. */
-  private drawEbox():void {
+  private drawEbox(transparancyValue = 1):void {
     const scaledEboxWdth:number = this.scaledRoverWdth - (2 * this.scaledWheelDpth) -
                                   (2 * this.scaledEdgeOffset);
     const eboxLoc:Point2D = {
@@ -182,8 +201,8 @@ export default class CanvasRover {
       x: eboxLoc.x - (scaledEboxWdth / 2),
       y: eboxLoc.y - (this.scaledEboxLen / 2)
     };
-
-    this.ctx.fillStyle = 'white';
+    const color = `rgba(255, 255, 255, ${transparancyValue})`;
+    this.ctx.fillStyle = color;
     this.ctx.fillRect(startCorner.x, startCorner.y, scaledEboxWdth, this.scaledEboxLen);
   } /* drawEbox() */
 
@@ -272,10 +291,10 @@ export default class CanvasRover {
   } /* drawPath() */
 
   /* Draw the wheels on the rover. */
-  private drawWheels():void {
+  private drawWheels(transparancyValue = 1):void {
     const wheelLocs:WheelLocs = this.getRelWheelLocs();
-
-    this.ctx.fillStyle = '#404040';
+    const color = `rgba(64, 64, 64, ${transparancyValue})`;
+    this.ctx.fillStyle = color;
     wheelLocs.forEach((wheelLoc:Point2D) => {
       const startCorner:Point2D = {
         x: wheelLoc.x - (this.scaledWheelDpth / 2),
@@ -287,7 +306,7 @@ export default class CanvasRover {
   } /* drawWheels() */
 
   /* Draw the ZED on the rover. */
-  private drawZed():void {
+  private drawZed(transparancyValue = 1):void {
     const zedLoc:Point2D = {
       x: 0,
       y: this.scaledEdgeOffset + ((this.scaledZedLen - this.scaledRoverLen) / 2)
@@ -296,10 +315,11 @@ export default class CanvasRover {
       x: zedLoc.x - (this.scaledZedWdth / 2),
       y: zedLoc.y - (this.scaledZedLen / 2)
     };
-    this.ctx.fillStyle = 'silver';
+
+    const color = `rgba(192, 192, 192, ${transparancyValue})`;
+    this.ctx.fillStyle = color;
     this.ctx.fillRect(startCorner.x, startCorner.y, this.scaledZedWdth, this.scaledZedLen);
   } /* drawZed() */
-
 
   /* Get the wheel locations in pixels relative to the center of the rover. */
   private getRelWheelLocs():WheelLocs {

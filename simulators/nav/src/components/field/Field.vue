@@ -146,6 +146,9 @@ export default class Field extends Vue {
   private readonly currOdom!:Odom;
 
   @Getter
+  private readonly realOdom!:Odom;
+
+  @Getter
   private readonly drawMode!:FieldItemType;
 
   @Getter
@@ -233,6 +236,9 @@ export default class Field extends Vue {
   private readonly setCurrOdom!:(newOdom:Odom)=>void;
 
   @Mutation
+  private readonly setRealOdom!:(newOdom:Odom)=>void;
+
+  @Mutation
   private readonly setFieldState!:(newState:FieldState)=>void
 
   @Mutation
@@ -295,10 +301,10 @@ export default class Field extends Vue {
 
   /* Object for drawing rover on canvas. */
   private get canvasRover():CanvasRover {
-    return new CanvasRover(this.currOdom, this.fieldCenterOdom, this.scale, this.roverPath,
-                           this.FOVAreaPath, this.fieldOfViewOptions, this.roverPathVisible,
-                           this.pushToRoverPath, this.pushToFOVAreaPath, this.zedGimbalPos,
-                           this.enableFOVView);
+    return new CanvasRover(this.realOdom, this.currOdom, this.fieldCenterOdom, this.scale,
+                           this.roverPath, this.FOVAreaPath, this.fieldOfViewOptions,
+                           this.roverPathVisible, this.pushToRoverPath, this.pushToFOVAreaPath,
+                           this.zedGimbalPos, this.enableFOVView);
   }
 
   /* Object for drawing waypoints on canvas. */
@@ -418,7 +424,8 @@ export default class Field extends Vue {
   /* If the rover is not on, move the current odom. */
   private moveRover(newCurrOdom:Odom):void {
     if (!this.autonOn) {
-      this.setCurrOdom(newCurrOdom);
+      this.setRealOdom(newCurrOdom);
+      this.setRealOdom(newCurrOdom);
       this.clearRoverPath();
     }
   } /* moveRover() */
@@ -428,6 +435,7 @@ export default class Field extends Vue {
     if (!this.autonOn) {
       this.setStartLoc(newStartLoc);
       this.setCurrOdom(newStartLoc);
+      this.setRealOdom(newStartLoc);
       this.clearRoverPath();
     }
   } /* moveStartLoc() */
